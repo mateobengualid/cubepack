@@ -25,7 +25,7 @@ def get_rotation_chain(block, x, y, z):
     
     '''
     # Get the rotation once per face
-    result = set()
+    result = list()
     
     # Rotations for the front view.
     newPiece = x * [y * [z * [False]]]
