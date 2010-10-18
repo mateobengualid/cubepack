@@ -6,6 +6,8 @@ to ensemble them into a defined cuboid.
 '''
 
 class VarDirection:
+    '''A class that encapsulates a variable progression.'''
+    
     def __init__(self, name, top, goes_up=True):
         self.name = name
         self.goes_up = goes_up
@@ -37,22 +39,22 @@ def pack(blocks, space):
     Variables x, y, and z are modelled this way (they are a 3-D projection!):
     
     y
-          z
-    ^    ╮
+    
+    ^    z
     |   /
     |  /
     | /
     |/
-    ╰----------> x
+    o----------> x
     '''
     pass
         
-x_inc = lambda x : VarDirection("x", x)
-y_inc = lambda x : VarDirection("y", x)
-z_inc = lambda x : VarDirection("z", x)
-x_dec = lambda x : VarDirection("x", x, goes_up=False)
-y_dec = lambda x : VarDirection("y", x, goes_up=False)
-z_dec = lambda x : VarDirection("z", x, goes_up=False)
+X_INC = lambda x : VarDirection("x", x)
+Y_INC = lambda x : VarDirection("y", x)
+Z_INC = lambda x : VarDirection("z", x)
+X_DEC = lambda x : VarDirection("x", x, goes_up=False)
+Y_DEC = lambda x : VarDirection("y", x, goes_up=False)
+Z_DEC = lambda x : VarDirection("z", x, goes_up=False)
 
 def get_rotation_chain(block, sizes):
     '''Generate a list with the unique rotations of a block.
@@ -67,12 +69,12 @@ def get_rotation_chain(block, sizes):
     y_l = sizes.y
     z_l = sizes.z
     
-    result += rotate_for_face(block, sizes, x_inc(x_l), y_inc(y_l), z_inc(z_l))
-    result += rotate_for_face(block, sizes, z_inc(z_l), y_inc(y_l), x_dec(x_l))
-    result += rotate_for_face(block, sizes, x_dec(x_l), y_inc(y_l), z_dec(z_l))
-    result += rotate_for_face(block, sizes, z_dec(z_l), y_inc(y_l), x_inc(x_l))
-    result += rotate_for_face(block, sizes, x_inc(x_l), z_inc(z_l), y_dec(y_l))
-    result += rotate_for_face(block, sizes, z_inc(z_l), x_inc(x_l), y_inc(y_l))
+    result += rotate_for_face(block, sizes, X_INC(x_l), Y_INC(y_l), Z_INC(z_l))
+    result += rotate_for_face(block, sizes, Z_INC(z_l), Y_INC(y_l), X_DEC(x_l))
+    result += rotate_for_face(block, sizes, X_DEC(x_l), Y_INC(y_l), Z_DEC(z_l))
+    result += rotate_for_face(block, sizes, Z_DEC(z_l), Y_INC(y_l), X_INC(x_l))
+    result += rotate_for_face(block, sizes, X_INC(x_l), Z_INC(z_l), Y_DEC(y_l))
+    result += rotate_for_face(block, sizes, Z_INC(z_l), X_INC(x_l), Y_INC(y_l))
     
     clean_repeated_pieces(result)
     return result
@@ -84,16 +86,22 @@ def rotate_for_face(block, sizes, directions):
     new_piece = size_x * [size_y * [size_z * [False]]]
 
     i_gen = dir_x.generator()
-    for i in xrange(dir_x.top):
+    while(i_gen.has_next()):
         i_new = i_gen.next()
         j_gen = dir_y.generator()
-        for j in xrange(dir_y.top):
+        while(j_gen.has_next()):
             j_new = j_gen.next()
             k_gen = dir_z.generator()
-            for k in xrange(dir_z.top):
+            while(k_gen.has_next()):
                 k_new = k_gen.next()
                 new_piece[i][j][k] = block[i][j][k]
     result.append(newPiece)
+    
+def get_piece_value_from_named_vars(piece, **kwargs):
+    return piece[kwargs["x"]][kwargs["y"]][kwargs["z"]]
+    
+def clean_repeated_pieces(pieces):
+    pass
     
 def two_pieces_are_equal(piece_a, piece_b):
     '''Compare two non-empty pieces.'''
@@ -102,14 +110,14 @@ def two_pieces_are_equal(piece_a, piece_b):
     y = len(piece_a[0])
     z = len(piece_a[0][0])
     if x != len(piece_b) or y != len(piece_b[0]) or z != len(piece_b[0][0]):
-        return false
+        return False
     else:
         for i in xrange(x):
             for j in xrange(y):
                 for k in xrange(z):
                     if piece_a[i][j][k] != piece_b[i][j][k]:
-                        return false
-        return true
+                        return False
+        return True
     
 def next_rotated_block(block, rotateChain):
     '''Generate a non-repeating sequence of rotated blocks.'''
