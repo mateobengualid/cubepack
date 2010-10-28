@@ -5,22 +5,6 @@ to ensemble them into a defined cuboid.
 
 '''
 
-class VarDirection:
-    '''A class that encapsulates a variable progression.'''
-    
-    def __init__(self, name, top, goes_up=True):
-        self.name = name
-        self.goes_up = goes_up
-        self.top = top
-        
-    def generator(self):
-        if self.goes_up:
-            for i in xrange(self.top):
-                yield i
-        else:
-            for i in reversed(xrange(self.top)):
-                yield i
-
 def pack(blocks, space):
     '''Pack the blocks on the space and return a matrix with the positions.
     
@@ -46,15 +30,46 @@ def pack(blocks, space):
     | /
     |/
     o----------> x
+    
     '''
     pass
+
+class Progression():
+    '''Class that encapsulates a sequence of block value retrieval.'''
+    
+    def __init__(self, x, y, z, size_x, size_y, size_z):
+        '''Initialize the progression of an assignment of a block. 
         
-X_INC = lambda x : VarDirection("x", x)
-Y_INC = lambda x : VarDirection("y", x)
-Z_INC = lambda x : VarDirection("z", x)
-X_DEC = lambda x : VarDirection("x", x, goes_up=False)
-Y_DEC = lambda x : VarDirection("y", x, goes_up=False)
-Z_DEC = lambda x : VarDirection("z", x, goes_up=False)
+        Parameters:
+        * A matrix of booleans. It should be like this: [][][].
+        * three generator functions, and the sizes
+        for each dimension.
+        
+        '''
+        self.current_piece = block
+        self.x = x
+        self.y = y
+        self.z = z
+        self.x_goes_up = x_goes_up
+        self.y_goes_up = y_goes_up
+        self.z_goes_up = z_goes_up
+    
+    def assign_value(self, block_value):
+        '''Assign the next discreet value to the block being constructed.'''
+        cur_x, cur_y, cur_z = self.current_values()
+        self.current_piece[cur_x][cur_y][cur_z] = block_value
+    
+    def current_values(self):
+        '''Return the next set of values for the current progression.'''
+        g_x = x()
+        while g_x.has_next():
+            new_x = g_x.next()
+            g_y = y()
+            while g_y.has_next():
+                new_y = g_x.next()
+                g_z = z()
+                while g_z.has_next():
+                    yield (new_x, new_y, g_z.next())
 
 def get_rotation_chain(block, sizes):
     '''Generate a list with the unique rotations of a block.
@@ -79,8 +94,8 @@ def get_rotation_chain(block, sizes):
     clean_repeated_pieces(result)
     return result
     
-def rotate_for_face(block, sizes, directions):
-    '''Rotate the current block over the front face (x and y).'''
+def rotate_a(block, sizes):
+    '''Rotate the block 90° on the Y axis and 90° on the Z axis.'''
     (size_x, size_y, size_z) = sizes
     (dir_x, dir_y, dir_z) = directions
     new_piece = size_x * [size_y * [size_z * [False]]]
@@ -97,11 +112,18 @@ def rotate_for_face(block, sizes, directions):
                 new_piece[i][j][k] = block[i][j][k]
     result.append(newPiece)
     
-def get_piece_value_from_named_vars(piece, **kwargs):
-    return piece[kwargs["x"]][kwargs["y"]][kwargs["z"]]
+def rotate_b(block, sizes):
+    '''Rotate the block 270° on the Y axis and 180° on the Z axis.'''
+    pass
     
+def rotate_through_axis(block, )
+
 def clean_repeated_pieces(pieces):
     pass
+    
+def from_piece_to_binary(piece):
+    '''Transform a piece in a 3d matrix into an integer representation.'''
+    
     
 def two_pieces_are_equal(piece_a, piece_b):
     '''Compare two non-empty pieces.'''
