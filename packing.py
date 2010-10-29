@@ -5,35 +5,6 @@ to ensemble them into a defined cuboid.
 
 '''
 
-def pack(blocks, space):
-    '''Pack the blocks on the space and return a matrix with the positions.
-    
-    Parameters:
-    * blocks: A tuple with:
-      * An identifier (a string will do).
-      * A matrix of booleans. It should be like this: [][][].
-    * space: A tuple with three ints, (x, y, z), that define the environment.
-       
-    The assumptions are:
-    * A block is a cuboid of boolean values.
-    * The space is a cuboid.
-    * The blocks can enter perfectly on the space.
-    * The blocks, as well as the space, are composed of discreet units.
-    
-    Variables x, y, and z are modelled this way (they are a 3-D projection!):
-    
-    y
-    
-    ^    z
-    |   /
-    |  /
-    | /
-    |/
-    o----------> x
-    
-    '''
-    pass
-
 class Progression():
     '''Class that encapsulates a sequence of block value retrieval.'''
     
@@ -108,7 +79,7 @@ def from_piece_to_binary(piece):
                     result = result | 0x01
     return result
     
-def clean_repeated_pieces(pieces):
+def clean_pieces(pieces):
     result = set()
     for piece in pieces:
         result.add(from_piece_to_binary(piece))
@@ -171,5 +142,33 @@ def get_rotation_chain(block, sizes):
     result += fill(Progression(Z_DEC, X_DEC, Y_INC, z_l, x_l, y_l))
     result += fill(Progression(X_DEC, Z_INC, Y_INC, x_l, z_l, y_l))
     
-    clean_pieces(result)
-    return result
+    return clean_pieces(result)
+    
+def pack(blocks, space):
+    '''Pack the blocks on the space and return a matrix with the positions.
+    
+    Parameters:
+    * blocks: A tuple with:
+      * An identifier (a string will do).
+      * A matrix of booleans. It should be like this: [][][].
+    * space: A tuple with three ints, (x, y, z), that define the environment.
+       
+    The assumptions are:
+    * A block is a cuboid of boolean values.
+    * The space is a cuboid.
+    * The blocks can enter perfectly on the space.
+    * The blocks, as well as the space, are composed of discreet units.
+    
+    Variables x, y, and z are modelled this way (they are a 3-D projection!):
+    
+    y
+    
+    ^    z
+    |   /
+    |  /
+    | /
+    |/
+    o----------> x
+    
+    '''
+    pass
