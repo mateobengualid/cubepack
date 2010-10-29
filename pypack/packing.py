@@ -5,6 +5,8 @@ to ensemble them into a defined cuboid.
 
 '''
 
+import itertools
+
 class Progression():
     '''Class that encapsulates a sequence of block value retrieval.'''
     
@@ -29,15 +31,10 @@ class Progression():
     
     def current_values(self):
         '''Return the next set of values for the current progression.'''
-        local_gen_x = self.g_x()
-        while local_gen_x.has_next():
-            new_x = local_gen_x.next()
-            local_gen_y = self.g_y()
-            while local_gen_y.has_next():
-                new_y = local_gen_y.next()
-                local_gen_z = self.g_z()
-                while local_gen_z.has_next():
-                    yield (new_x, new_y, local_gen_z.next())
+        for new_x in self.g_x():
+            for new_y in self.g_y():
+                for new_z in self.g_z():
+                    yield (new_x, new_y, new_z)
 
 class Curried:
     '''Generic currying class, it applies to fully assigned parameters.'''
@@ -45,11 +42,19 @@ class Curried:
     def __init__(self, func, *args):
         self.func = func
         self.args = args
-    def __call__(self, *a):    
-        return self.func(self.args + a)
+        self.can_call = True
+
+    def __call__(self, *a):
+        args = self.args + a
+
+        # Check that all parameters have been submitted.
+        if not self.can_call or len(args) < self.func.func_code.co_argcount:
+            return Curried(self.func, *args)
+        else:
+            return self.func(*args)
 
 @Curried
-def progress(limit, goes_up=True):
+def progress(limit, goes_up):
     '''Generator that returns a progression of n values up or down.'''
     if goes_up:
         for i in xrange(limit):
@@ -59,22 +64,32 @@ def progress(limit, goes_up=True):
             yield i
             
 @Curried
-def fill_progression_block(block, progression=None):
+def fill_progression_block(block, progression):
     '''Put the block data on the block inside the progression.'''
     for i in xrange(len(block)):
         for j in xrange(len(block[i])):
             for k in xrange(len(block[i][j])):
                 progression.assign_value(block[i][j][k])
 
-def from_piece_to_binary(piece):
+def from_piece_to_binary(piece, space):
     '''Transform a piece in a 3d matrix into an integer representation.'''
-    result = 0x00
+    # Print them in inverse order, it's easier that way.
+    rev_result = 0x00
     for i in xrange(len(piece)):
         for j in xrange(len(piece[i])):
             for k in xrange(len(piece[i][j])):
-                result << 1
+                rev_result = rev_result << 1
                 if piece[i][j][k]:
-                    result = result | 0x01
+                    rev_result |=  0x01
+            rev_result << space[2] - 1 - k
+        rev_result << (space[1] - 1 - j) * space[2]
+    
+    # Turn everything around.
+    result = 0
+    while not rev_result == 0:
+        result = result << 1
+        result |= rev_result & 0x01
+        rev_result = rev_result >> 1
     return result
     
 def clean_pieces(pieces):
@@ -96,11 +111,11 @@ def get_rotation_chain(block, sizes):
     x_l, y_l, z_l = sizes
     
     # Define a set of curried functions.
-    x_inc = progress(x_l)
+    x_inc = progress(x_l, True)
     x_dec = progress(x_l, False)
-    y_inc = progress(y_l)
+    y_inc = progress(y_l, True)
     y_dec = progress(y_l, False)
-    z_inc = progress(z_l)
+    z_inc = progress(z_l, True)
     z_dec = progress(z_l, False)
     fill = fill_progression_block(block)
     
@@ -143,13 +158,54 @@ def get_rotation_chain(block, sizes):
     
     return clean_pieces(result)
     
+def try_to_fit(stack, target, pieces_order, rotations, my_piece):
+    '''Try to fit a piece.'''
+    p, state, ignore = stack[-1]
+    for rotation in rotations[my_piece]:
+        # Try a rotation.
+        placed_rotation = rotation << p
+        if placed_rotation < target and not placed_rotation & state:
+            # If it fits, stack the new values.
+            new_p = p
+            new_state = state | placed_rotation
+            while 0x01 << new_p & new_state:
+                new_p = new_p + 1            
+            stack.append((new_p, new_state, placed_rotation))
+            if my_piece + 1 == len(pieces_order):
+                # The last piece fitted. Return with the good news.
+                return True
+            elif try_to_fit(stack, target, pieces_order, rotations,
+                my_piece + 1):
+                # The remaining pieces fitted. Return with the good news.
+                return True
+        # It it doesn't fit immediately or exceedes the space, try a different
+        # rotation.
+    # If it runned out of rotations, try a different permutation.
+    stack.pop()
+    return False
+
+def try_to_solve(rotations, space):
+    '''Try permutations until it's solved.'''
+    # Set the initial variables.
+    target = 0
+    state = 0
+    p = 0
+    for i in xrange(space[0] * space[1] * space[2]):
+        target = target << 1 | 0x01
+    
+    permutations = itertools.permutations(xrange(len(rotations)))
+    for a_permutation in permutations:
+        # Try a permutation.
+        stack = [(0, 0, 0),]
+        if try_to_fit(stack, target, a_permutation, rotations, 0):
+            return (a_permutation, stack)
+    return (None, None)
+    
 def pack(blocks, space):
     '''Pack the blocks on the space and return a matrix with the positions.
     
     Parameters:
-    * blocks: A tuple with:
-      * An identifier (a string will do).
-      * A matrix of booleans. It should be like this: [][][].
+    * blocks: A list with a matrix of booleans. It should be like this: [][][].
     * space: A tuple with three ints, (x, y, z), that define the environment.
        
     The assumptions are:
@@ -170,4 +226,18 @@ def pack(blocks, space):
     o----------> x
     
     '''
-    pass
+    
+    # Construct the set of rotations for each piece.
+    rotations = {}
+    for block in blocks:
+        sizes = (len(block), len(block[0]), len(block[0][0]))
+        rotations[len(rotations)] = get_rotation_chain(block, sizes)
+    
+    # Try iterating and getting a result.
+    result = try_to_solve(rotations, space)
+    
+    # Return a result based on the previous result.
+    if not result:
+        print "You asked the impossible. BTW, entropy can't be reversed..yet."
+    else:
+        print "Congrats! There is a solution:", result
