@@ -97,6 +97,23 @@ def fill_progression_block(block, progression):
             for k in xrange(len(block[i][j])):
                 progression.assign_value(block[i][j][k])
 
+def from_piece_to_binary(piece):
+    '''Transform a piece in a 3d matrix into an integer representation.'''
+    result = 0x00
+    for i in xrange(len(piece)):
+        for j in xrange(len(piece[i])):
+            for k in xrange(len(piece[i][j])):
+                result << 1
+                if piece[i][j][k]:
+                    result = result | 0x01
+    return result
+    
+def clean_repeated_pieces(pieces):
+    result = set()
+    for piece in pieces:
+        result.add(from_piece_to_binary(piece))
+    return result
+
 def get_rotation_chain(block, sizes):
     '''Generate a list with the unique rotations of a block.
     
@@ -155,21 +172,4 @@ def get_rotation_chain(block, sizes):
     result += fill(Progression(X_DEC, Z_INC, Y_INC, x_l, z_l, y_l))
     
     clean_pieces(result)
-    return result
-    
-def from_piece_to_binary(piece):
-    '''Transform a piece in a 3d matrix into an integer representation.'''
-    result = 0x00
-    for i in xrange(len(piece)):
-        for j in xrange(len(piece[i])):
-            for k in xrange(len(piece[i][j])):
-                result << 1
-                if piece[i][j][k]:
-                    result = result | 0x01
-    return result
-    
-def clean_repeated_pieces(pieces):
-    result = set()
-    for piece in pieces:
-        result.add(from_piece_to_binary(piece))
     return result
