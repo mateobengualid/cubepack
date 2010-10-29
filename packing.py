@@ -41,18 +41,17 @@ class Progression():
         '''Initialize the progression of an assignment of a block. 
         
         Parameters:
-        * A matrix of booleans. It should be like this: [][][].
-        * three generator functions, and the sizes
-        for each dimension.
+        * Three generator functions, one for each dimension.
+        * The sizes for each dimension.
         
         '''
-        self.current_piece = block
+        self.current_piece = size_x * [size_y * [size_z * [False]]]
         self.x = x
         self.y = y
         self.z = z
-        self.x_goes_up = x_goes_up
-        self.y_goes_up = y_goes_up
-        self.z_goes_up = z_goes_up
+        self.size_x = size_x
+        self.size_y = size_y
+        self.size_z = size_z
     
     def assign_value(self, block_value):
         '''Assign the next discreet value to the block being constructed.'''
@@ -61,63 +60,85 @@ class Progression():
     
     def current_values(self):
         '''Return the next set of values for the current progression.'''
-        g_x = x()
+        g_x = x(size_x)
         while g_x.has_next():
             new_x = g_x.next()
-            g_y = y()
+            g_y = y(size_y)
             while g_y.has_next():
                 new_y = g_x.next()
                 g_z = z()
                 while g_z.has_next():
                     yield (new_x, new_y, g_z.next())
 
+class curried:
+  '''Generic currying class, it applies to fully assigned parameters.'''
+
+  def __init__(self, func, *args):
+    self.func = func
+    self.args = args
+  def __call__(self, *a):    
+    return self.func(self.args + a)
+
+@curried
+def progress(limit, goes_up=True):
+    '''Generator that returns a progression of n values up or down.'''
+    if goes_up:
+        for i in xrange(limit):
+            yield i
+    else:
+        for i in xrange(limit - 1, -1, -1):
+            yield i
+
 def get_rotation_chain(block, sizes):
     '''Generate a list with the unique rotations of a block.
     
     This function is necessarily ugly, because I'm retarded and I couldn't find
     a fancy way to put it. Since it will be a hairy function anyway, just do it
-    ugly.
+    hairy.
     
     '''
     result = list()
-    x_l = sizes.x
-    y_l = sizes.y
-    z_l = sizes.z
+    x_l, y_l, z_l = sizes
     
-    result += rotate_for_face(block, sizes, X_INC(x_l), Y_INC(y_l), Z_INC(z_l))
-    result += rotate_for_face(block, sizes, Z_INC(z_l), Y_INC(y_l), X_DEC(x_l))
-    result += rotate_for_face(block, sizes, X_DEC(x_l), Y_INC(y_l), Z_DEC(z_l))
-    result += rotate_for_face(block, sizes, Z_DEC(z_l), Y_INC(y_l), X_INC(x_l))
-    result += rotate_for_face(block, sizes, X_INC(x_l), Z_INC(z_l), Y_DEC(y_l))
-    result += rotate_for_face(block, sizes, Z_INC(z_l), X_INC(x_l), Y_INC(y_l))
+    # Define a set of curried functions.
+    X_INC = progress(sizes.x)
+    X_DEC = progress(sizes.x, False)
+    Y_INC = progress(sizes.y)
+    Y_DEC = progress(sizes.y, False)
+    Z_INC = progress(sizes.z)
+    Z_DEC = progress(sizes.z, False)
+    fill = fill_progression_block(block)
+    
+    # I hate this as much as you do.
+    # Front view.
+    result += fill(Progression(X_INC, Y_INC, Z_INC, x_l, y_l, z_l))
+    
+    # Right view (rotate clockwise and the right becomes the front).
+    result += fill(Progression(Z_INC, Y_INC, X_DEC, z_l, y_l, x_l))
+    
+    # Back view.
+    result += fill(Progression(X_DEC, Y_INC, Z_DEC, x_l, y_l, z_l))
+    
+    # Left view (rotate counter-clockwise and the left becomes the front).
+    result += fill(Progression(Z_DEC, Y_INC, X_INC, z_l, y_l, x_l))
+    
+    # Top view.
+    result += fill(Progression(X_INC, Z_INC, Y_DEC, x_l, z_l, y_l))
+    
+    # Low view.
+    result += fill(Progression(Z_INC, X_INC, Y_INC, z_l, x_l, y_l))
     
     clean_repeated_pieces(result)
     return result
     
-def rotate_a(block, sizes):
-    '''Rotate the block 90° on the Y axis and 90° on the Z axis.'''
-    (size_x, size_y, size_z) = sizes
-    (dir_x, dir_y, dir_z) = directions
-    new_piece = size_x * [size_y * [size_z * [False]]]
-
-    i_gen = dir_x.generator()
-    while(i_gen.has_next()):
-        i_new = i_gen.next()
-        j_gen = dir_y.generator()
-        while(j_gen.has_next()):
-            j_new = j_gen.next()
-            k_gen = dir_z.generator()
-            while(k_gen.has_next()):
-                k_new = k_gen.next()
-                new_piece[i][j][k] = block[i][j][k]
-    result.append(newPiece)
+@curried
+def fill_progression_block(block, progression):
+    '''Put the block data on the block inside the progression.'''
+    for i in xrange(len(block)):
+        for j in xrange(len(block[i])):
+            for k in xrange(len(block[i][j])):
+                progression.assign_value(block[i][j][k])
     
-def rotate_b(block, sizes):
-    '''Rotate the block 270° on the Y axis and 180° on the Z axis.'''
-    pass
-    
-def rotate_through_axis(block, )
-
 def clean_repeated_pieces(pieces):
     pass
     
