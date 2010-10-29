@@ -60,13 +60,13 @@ class Progression():
     
     def current_values(self):
         '''Return the next set of values for the current progression.'''
-        g_x = x(size_x)
+        g_x = self.x()
         while g_x.has_next():
             new_x = g_x.next()
-            g_y = y(size_y)
+            g_y = self.y()
             while g_y.has_next():
-                new_y = g_x.next()
-                g_z = z()
+                new_y = g_y.next()
+                g_z = self.z()
                 while g_z.has_next():
                     yield (new_x, new_y, g_z.next())
 
