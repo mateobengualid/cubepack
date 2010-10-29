@@ -41,7 +41,7 @@ class Progression():
                 while local_gen_z.has_next():
                     yield (new_x, new_y, local_gen_z.next())
 
-class curried:
+class Curried:
     '''Generic currying class, it applies to fully assigned parameters.'''
 
     def __init__(self, func, *args):
@@ -50,7 +50,7 @@ class curried:
     def __call__(self, *a):    
         return self.func(self.args + a)
 
-@curried
+@Curried
 def progress(limit, goes_up=True):
     '''Generator that returns a progression of n values up or down.'''
     if goes_up:
@@ -60,8 +60,8 @@ def progress(limit, goes_up=True):
         for i in xrange(limit - 1, -1, -1):
             yield i
             
-@curried
-def fill_progression_block(block, progression):
+@Curried
+def fill_progression_block(block, progression=None):
     '''Put the block data on the block inside the progression.'''
     for i in xrange(len(block)):
         for j in xrange(len(block[i])):
@@ -80,15 +80,16 @@ def from_piece_to_binary(piece):
     return result
     
 def clean_pieces(pieces):
+    '''Remove repeated pieces and transform them into binary representation.'''
     result = set()
     for piece in pieces:
         result.add(from_piece_to_binary(piece))
-    return result
+    return list(result)
 
 def get_rotation_chain(block, sizes):
     '''Generate a list with the unique rotations of a block.
     
-    This function is necessarily ugly, because I'm retarded and I couldn't find
+    This function is necessarily ugly, because I'm a noob and I couldn't find
     a fancy way to put it. Since it will be a hairy function anyway, just do it
     hairy.
     
@@ -97,12 +98,12 @@ def get_rotation_chain(block, sizes):
     x_l, y_l, z_l = sizes
     
     # Define a set of curried functions.
-    x_inc = progress(sizes.x)
-    x_dec = progress(sizes.x, False)
-    y_inc = progress(sizes.y)
-    y_dec = progress(sizes.y, False)
-    z_inc = progress(sizes.z)
-    z_dec = progress(sizes.z, False)
+    x_inc = progress(x_l)
+    x_dec = progress(x_l, False)
+    y_inc = progress(y_l)
+    y_dec = progress(y_l, False)
+    z_inc = progress(z_l)
+    z_dec = progress(z_l, False)
     fill = fill_progression_block(block)
     
     # I hate this as much as you do.
