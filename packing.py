@@ -128,7 +128,7 @@ def get_rotation_chain(block, sizes):
     # Low view.
     result += fill(Progression(Z_INC, X_INC, Y_INC, z_l, x_l, y_l))
     
-    clean_repeated_pieces(result)
+    clean_pieces(result)
     return result
     
 @curried
@@ -139,29 +139,19 @@ def fill_progression_block(block, progression):
             for k in xrange(len(block[i][j])):
                 progression.assign_value(block[i][j][k])
     
-def clean_repeated_pieces(pieces):
-    pass
-    
 def from_piece_to_binary(piece):
     '''Transform a piece in a 3d matrix into an integer representation.'''
+    result = 0x00
+    for i in xrange(len(piece)):
+        for j in xrange(len(piece[i])):
+            for k in xrange(len(piece[i][j])):
+                result << 1
+                if piece[i][j][k]:
+                    result = result | 0x01
+    return result
     
-    
-def two_pieces_are_equal(piece_a, piece_b):
-    '''Compare two non-empty pieces.'''
-    
-    x = len(piece_a)
-    y = len(piece_a[0])
-    z = len(piece_a[0][0])
-    if x != len(piece_b) or y != len(piece_b[0]) or z != len(piece_b[0][0]):
-        return False
-    else:
-        for i in xrange(x):
-            for j in xrange(y):
-                for k in xrange(z):
-                    if piece_a[i][j][k] != piece_b[i][j][k]:
-                        return False
-        return True
-    
-def next_rotated_block(block, rotateChain):
-    '''Generate a non-repeating sequence of rotated blocks.'''
-    pass
+def clean_repeated_pieces(pieces):
+    result = set()
+    for piece in pieces:
+        result.add(from_piece_to_binary(piece))
+    return result
