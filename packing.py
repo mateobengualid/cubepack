@@ -8,7 +8,7 @@ to ensemble them into a defined cuboid.
 class Progression():
     '''Class that encapsulates a sequence of block value retrieval.'''
     
-    def __init__(self, x, y, z, size_x, size_y, size_z):
+    def __init__(self, xg, yg, zg, size_x, size_y, size_z):
         '''Initialize the progression of an assignment of a block. 
         
         Parameters:
@@ -17,9 +17,9 @@ class Progression():
         
         '''
         self.current_piece = size_x * [size_y * [size_z * [False]]]
-        self.x = x
-        self.y = y
-        self.z = z
+        self.xg = xg
+        self.yg = yg
+        self.zg = zg
         self.size_x = size_x
         self.size_y = size_y
         self.size_z = size_z
@@ -31,13 +31,13 @@ class Progression():
     
     def current_values(self):
         '''Return the next set of values for the current progression.'''
-        g_x = self.x()
+        g_x = self.xg()
         while g_x.has_next():
             new_x = g_x.next()
-            g_y = self.y()
+            g_y = self.yg()
             while g_y.has_next():
                 new_y = g_y.next()
-                g_z = self.z()
+                g_z = self.zg()
                 while g_z.has_next():
                     yield (new_x, new_y, g_z.next())
 
@@ -97,50 +97,50 @@ def get_rotation_chain(block, sizes):
     x_l, y_l, z_l = sizes
     
     # Define a set of curried functions.
-    X_INC = progress(sizes.x)
-    X_DEC = progress(sizes.x, False)
-    Y_INC = progress(sizes.y)
-    Y_DEC = progress(sizes.y, False)
-    Z_INC = progress(sizes.z)
-    Z_DEC = progress(sizes.z, False)
+    x_inc = progress(sizes.x)
+    x_dec = progress(sizes.x, False)
+    y_inc = progress(sizes.y)
+    y_dec = progress(sizes.y, False)
+    z_inc = progress(sizes.z)
+    z_dec = progress(sizes.z, False)
     fill = fill_progression_block(block)
     
     # I hate this as much as you do.
     # Front view.
-    result += fill(Progression(X_INC, Y_INC, Z_INC, x_l, y_l, z_l))
-    result += fill(Progression(Y_DEC, X_INC, Z_INC, y_l, x_l, z_l))
-    result += fill(Progression(X_DEC, Y_DEC, Z_INC, x_l, y_l, z_l))
-    result += fill(Progression(Y_INC, X_DEC, Z_INC, y_l, x_l, z_l))
+    result += fill(Progression(x_inc, y_inc, z_inc, x_l, y_l, z_l))
+    result += fill(Progression(y_dec, x_inc, z_inc, y_l, x_l, z_l))
+    result += fill(Progression(x_dec, y_dec, z_inc, x_l, y_l, z_l))
+    result += fill(Progression(y_inc, x_dec, z_inc, y_l, x_l, z_l))
     
     # Right view (rotate clockwise and the right becomes the front).
-    result += fill(Progression(Z_INC, Y_INC, X_DEC, z_l, y_l, x_l))
-    result += fill(Progression(Y_INC, Z_DEC, X_DEC, y_l, z_l, x_l))
-    result += fill(Progression(Z_DEC, Y_DEC, X_DEC, z_l, y_l, x_l))
-    result += fill(Progression(Y_DEC, Z_INC, X_DEC, y_l, z_l, x_l))
+    result += fill(Progression(z_inc, y_inc, x_dec, z_l, y_l, x_l))
+    result += fill(Progression(y_inc, z_dec, x_dec, y_l, z_l, x_l))
+    result += fill(Progression(z_dec, y_dec, x_dec, z_l, y_l, x_l))
+    result += fill(Progression(y_dec, z_inc, x_dec, y_l, z_l, x_l))
     
     # Back view.
-    result += fill(Progression(X_DEC, Y_INC, Z_DEC, x_l, y_l, z_l))
-    result += fill(Progression(Y_DEC, X_DEC, Z_DEC, y_l, x_l, z_l))
-    result += fill(Progression(X_INC, Y_DEC, Z_DEC, x_l, y_l, z_l))
-    result += fill(Progression(Y_INC, X_INC, Z_DEC, y_l, x_l, z_l))
+    result += fill(Progression(x_dec, y_inc, z_dec, x_l, y_l, z_l))
+    result += fill(Progression(y_dec, x_dec, z_dec, y_l, x_l, z_l))
+    result += fill(Progression(x_inc, y_dec, z_dec, x_l, y_l, z_l))
+    result += fill(Progression(y_inc, x_inc, z_dec, y_l, x_l, z_l))
     
     # Left view (rotate counter-clockwise and the left becomes the front).
-    result += fill(Progression(Z_DEC, Y_INC, X_INC, z_l, y_l, x_l))
-    result += fill(Progression(Y_DEC, Z_DEC, X_INC, y_l, z_l, x_l))
-    result += fill(Progression(Z_INC, Y_DEC, X_INC, z_l, y_l, x_l))
-    result += fill(Progression(Y_INC, Z_INC, X_INC, y_l, z_l, x_l))
+    result += fill(Progression(z_dec, y_inc, x_inc, z_l, y_l, x_l))
+    result += fill(Progression(y_dec, z_dec, x_inc, y_l, z_l, x_l))
+    result += fill(Progression(z_inc, y_dec, x_inc, z_l, y_l, x_l))
+    result += fill(Progression(y_inc, z_inc, x_inc, y_l, z_l, x_l))
     
     # Top view.
-    result += fill(Progression(X_INC, Z_INC, Y_DEC, x_l, z_l, y_l))
-    result += fill(Progression(Z_INC, X_DEC, Y_DEC, z_l, x_l, y_l))
-    result += fill(Progression(X_DEC, Z_DEC, Y_DEC, x_l, z_l, y_l))
-    result += fill(Progression(Z_DEC, X_INC, Y_DEC, z_l, x_l, y_l))
+    result += fill(Progression(x_inc, z_inc, y_dec, x_l, z_l, y_l))
+    result += fill(Progression(z_inc, x_dec, y_dec, z_l, x_l, y_l))
+    result += fill(Progression(x_dec, z_dec, y_dec, x_l, z_l, y_l))
+    result += fill(Progression(z_dec, x_inc, y_dec, z_l, x_l, y_l))
     
     # Low view.
-    result += fill(Progression(Z_INC, X_INC, Y_INC, z_l, x_l, y_l))
-    result += fill(Progression(X_INC, Z_DEC, Y_INC, x_l, z_l, y_l))
-    result += fill(Progression(Z_DEC, X_DEC, Y_INC, z_l, x_l, y_l))
-    result += fill(Progression(X_DEC, Z_INC, Y_INC, x_l, z_l, y_l))
+    result += fill(Progression(z_inc, x_inc, y_inc, z_l, x_l, y_l))
+    result += fill(Progression(x_inc, z_dec, y_inc, x_l, z_l, y_l))
+    result += fill(Progression(z_dec, x_dec, y_inc, z_l, x_l, y_l))
+    result += fill(Progression(x_dec, z_inc, y_inc, x_l, z_l, y_l))
     
     return clean_pieces(result)
     
