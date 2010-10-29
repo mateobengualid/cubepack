@@ -88,6 +88,14 @@ def progress(limit, goes_up=True):
     else:
         for i in xrange(limit - 1, -1, -1):
             yield i
+            
+@curried
+def fill_progression_block(block, progression):
+    '''Put the block data on the block inside the progression.'''
+    for i in xrange(len(block)):
+        for j in xrange(len(block[i])):
+            for k in xrange(len(block[i][j])):
+                progression.assign_value(block[i][j][k])
 
 def get_rotation_chain(block, sizes):
     '''Generate a list with the unique rotations of a block.
@@ -112,32 +120,42 @@ def get_rotation_chain(block, sizes):
     # I hate this as much as you do.
     # Front view.
     result += fill(Progression(X_INC, Y_INC, Z_INC, x_l, y_l, z_l))
+    result += fill(Progression(Y_DEC, X_INC, Z_INC, y_l, x_l, z_l))
+    result += fill(Progression(X_DEC, Y_DEC, Z_INC, x_l, y_l, z_l))
+    result += fill(Progression(Y_INC, X_DEC, Z_INC, y_l, x_l, z_l))
     
     # Right view (rotate clockwise and the right becomes the front).
     result += fill(Progression(Z_INC, Y_INC, X_DEC, z_l, y_l, x_l))
+    result += fill(Progression(Y_INC, Z_DEC, X_DEC, y_l, z_l, x_l))
+    result += fill(Progression(Z_DEC, Y_DEC, X_DEC, z_l, y_l, x_l))
+    result += fill(Progression(Y_DEC, Z_INC, X_DEC, y_l, z_l, x_l))
     
     # Back view.
     result += fill(Progression(X_DEC, Y_INC, Z_DEC, x_l, y_l, z_l))
+    result += fill(Progression(Y_DEC, X_DEC, Z_DEC, y_l, x_l, z_l))
+    result += fill(Progression(X_INC, Y_DEC, Z_DEC, x_l, y_l, z_l))
+    result += fill(Progression(Y_INC, X_INC, Z_DEC, y_l, x_l, z_l))
     
     # Left view (rotate counter-clockwise and the left becomes the front).
     result += fill(Progression(Z_DEC, Y_INC, X_INC, z_l, y_l, x_l))
+    result += fill(Progression(Y_DEC, Z_DEC, X_INC, y_l, z_l, x_l))
+    result += fill(Progression(Z_INC, Y_DEC, X_INC, z_l, y_l, x_l))
+    result += fill(Progression(Y_INC, Z_INC, X_INC, y_l, z_l, x_l))
     
     # Top view.
     result += fill(Progression(X_INC, Z_INC, Y_DEC, x_l, z_l, y_l))
+    result += fill(Progression(Z_INC, X_DEC, Y_DEC, z_l, x_l, y_l))
+    result += fill(Progression(X_DEC, Z_DEC, Y_DEC, x_l, z_l, y_l))
+    result += fill(Progression(Z_DEC, X_INC, Y_DEC, z_l, x_l, y_l))
     
     # Low view.
     result += fill(Progression(Z_INC, X_INC, Y_INC, z_l, x_l, y_l))
+    result += fill(Progression(X_INC, Z_DEC, Y_INC, x_l, z_l, y_l))
+    result += fill(Progression(Z_DEC, X_DEC, Y_INC, z_l, x_l, y_l))
+    result += fill(Progression(X_DEC, Z_INC, Y_INC, x_l, z_l, y_l))
     
     clean_pieces(result)
     return result
-    
-@curried
-def fill_progression_block(block, progression):
-    '''Put the block data on the block inside the progression.'''
-    for i in xrange(len(block)):
-        for j in xrange(len(block[i])):
-            for k in xrange(len(block[i][j])):
-                progression.assign_value(block[i][j][k])
     
 def from_piece_to_binary(piece):
     '''Transform a piece in a 3d matrix into an integer representation.'''
