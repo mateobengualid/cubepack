@@ -33,10 +33,10 @@ class Progression():
         '''Return the next set of values for the current progression.'''
         local_gen_x = self.g_x()
         while local_gen_x.has_next():
-            new_x = g_x.next()
+            new_x = local_gen_x.next()
             local_gen_y = self.g_y()
             while local_gen_y.has_next():
-                new_y = g_y.next()
+                new_y = local_gen_y.next()
                 local_gen_z = self.g_z()
                 while local_gen_z.has_next():
                     yield (new_x, new_y, local_gen_z.next())
