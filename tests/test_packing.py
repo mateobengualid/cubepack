@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import unittest
-import packing
+
+from .. import packing
 
 class TestPacking(unittest.TestCase):
     def test_rotate(self):
