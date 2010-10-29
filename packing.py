@@ -8,7 +8,7 @@ to ensemble them into a defined cuboid.
 class Progression():
     '''Class that encapsulates a sequence of block value retrieval.'''
     
-    def __init__(self, xg, yg, zg, size_x, size_y, size_z):
+    def __init__(self, g_x, g_y, g_z, size_x, size_y, size_z):
         '''Initialize the progression of an assignment of a block. 
         
         Parameters:
@@ -17,9 +17,9 @@ class Progression():
         
         '''
         self.current_piece = size_x * [size_y * [size_z * [False]]]
-        self.xg = xg
-        self.yg = yg
-        self.zg = zg
+        self.g_x = g_x
+        self.g_y = g_y
+        self.g_z = g_z
         self.size_x = size_x
         self.size_y = size_y
         self.size_z = size_z
@@ -31,24 +31,24 @@ class Progression():
     
     def current_values(self):
         '''Return the next set of values for the current progression.'''
-        g_x = self.xg()
-        while g_x.has_next():
+        local_gen_x = self.g_x()
+        while local_gen_x.has_next():
             new_x = g_x.next()
-            g_y = self.yg()
-            while g_y.has_next():
+            local_gen_y = self.g_y()
+            while local_gen_y.has_next():
                 new_y = g_y.next()
-                g_z = self.zg()
-                while g_z.has_next():
-                    yield (new_x, new_y, g_z.next())
+                local_gen_z = self.g_z()
+                while local_gen_z.has_next():
+                    yield (new_x, new_y, local_gen_z.next())
 
 class curried:
-  '''Generic currying class, it applies to fully assigned parameters.'''
+    '''Generic currying class, it applies to fully assigned parameters.'''
 
-  def __init__(self, func, *args):
-    self.func = func
-    self.args = args
-  def __call__(self, *a):    
-    return self.func(self.args + a)
+    def __init__(self, func, *args):
+        self.func = func
+        self.args = args
+    def __call__(self, *a):    
+        return self.func(self.args + a)
 
 @curried
 def progress(limit, goes_up=True):
