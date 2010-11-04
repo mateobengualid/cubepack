@@ -5,7 +5,7 @@ to ensemble them into a defined cuboid.
 
 '''
 
-import itertools
+import itertools, functools
 
 class Progression():
     '''Class that encapsulates a sequence of block value retrieval.'''
@@ -36,24 +36,6 @@ class Progression():
                 for new_z in self.g_z():
                     yield (new_x, new_y, new_z)
 
-class Curried:
-    '''Generic currying class, it applies to fully assigned parameters.'''
-
-    def __init__(self, func, *args):
-        self.func = func
-        self.args = args
-        self.can_call = True
-
-    def __call__(self, *a):
-        args = self.args + a
-
-        # Check that all parameters have been submitted.
-        if not self.can_call or len(args) < self.func.func_code.co_argcount:
-            return Curried(self.func, *args)
-        else:
-            return self.func(*args)
-
-@Curried
 def progress(limit, goes_up):
     '''Generator that returns a progression of n values up or down.'''
     if goes_up:
@@ -63,7 +45,6 @@ def progress(limit, goes_up):
         for i in xrange(limit - 1, -1, -1):
             yield i
             
-@Curried
 def fill_progression_block(block, progression):
     '''Put the block data on the block inside the progression.'''
     for i in xrange(len(block)):
@@ -81,22 +62,22 @@ def from_piece_to_binary(piece, space):
                 rev_result = rev_result << 1
                 if piece[i][j][k]:
                     rev_result |=  0x01
-            rev_result << space[2] - 1 - k
-        rev_result << (space[1] - 1 - j) * space[2]
+            rev_result <<= space[2] - 1 - k
+        rev_result <<= (space[1] - 1 - j) * space[2]
     
     # Turn everything around.
     result = 0
     while not rev_result == 0:
-        result = result << 1
+        result <<= 1
         result |= rev_result & 0x01
-        rev_result = rev_result >> 1
+        rev_result >>= 1
     return result
     
-def clean_pieces(pieces):
+def clean_pieces(pieces, space):
     '''Remove repeated pieces and transform them into binary representation.'''
     result = set()
     for piece in pieces:
-        result.add(from_piece_to_binary(piece))
+        result.add(from_piece_to_binary(piece, space))
     return list(result)
 
 def get_rotation_chain(block, sizes):
@@ -111,13 +92,13 @@ def get_rotation_chain(block, sizes):
     x_l, y_l, z_l = sizes
     
     # Define a set of curried functions.
-    x_inc = progress(x_l, True)
-    x_dec = progress(x_l, False)
-    y_inc = progress(y_l, True)
-    y_dec = progress(y_l, False)
-    z_inc = progress(z_l, True)
-    z_dec = progress(z_l, False)
-    fill = fill_progression_block(block)
+    x_inc = lambda : progress(x_l, True)
+    x_dec = lambda : progress(x_l, False)
+    y_inc = lambda : progress(y_l, True)
+    y_dec = lambda : progress(y_l, False)
+    z_inc = lambda : progress(z_l, True)
+    z_dec = lambda : progress(z_l, False)
+    fill = functools.partial(block)
     
     # I hate this as much as you do.
     # Front view.
@@ -156,7 +137,7 @@ def get_rotation_chain(block, sizes):
     result += fill(Progression(z_dec, x_dec, y_inc, (z_l, x_l, y_l)))
     result += fill(Progression(x_dec, z_inc, y_inc, (x_l, z_l, y_l)))
     
-    return clean_pieces(result)
+    return clean_pieces(result, sizes)
     
 def try_to_fit(stack, target, pieces_order, rotations, my_piece):
     '''Try to fit a piece.'''
